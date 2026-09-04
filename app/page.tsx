@@ -9,6 +9,6 @@ export default async   function Home() {
   await auth.protect();
   const user = await onBoardCurrentUser();
   return (
- <ChatDashboard/>
+ <ChatDashboard userName={user?.name} />
   );
 }

@@ -1,16 +1,20 @@
 "use client";
 
 import type { UIMessage } from "ai";
+import { SparklesIcon } from "lucide-react";
+import { MarkdownMessage } from "@/components/chat/markdown-message";
+import { ChatWelcome } from "@/components/chat/chat-welcome";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Spinner } from "@/components/ui/spinner";
 import {
-  Message,
-  MessageAvatar,
-  MessageContent,
-  MessageGroup,
-} from "@/components/ui/message";
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@/components/ui/message-scroller";
+import { cn } from "@/lib/utils";
 
 function getMessageText(message: UIMessage) {
   return message.parts
@@ -22,54 +26,110 @@ function getMessageText(message: UIMessage) {
 export function MessageList({
   messages,
   userName,
-  isStreaming
-}:{
+  isStreaming,
+  onSuggestionClick,
+}: {
   messages: UIMessage[];
   userName?: string | null;
-  isStreaming: boolean;
-}){
-  const displayName = userName ?? "You";
+  isStreaming?: boolean;
+  onSuggestionClick?: (prompt: string) => void;
+}) {
+  const displayName = userName || "You";
 
-  if(!messages.length)  {
-    return <div className="flex-1" />;
+  if (!messages.length) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4">
+        <ChatWelcome onSuggestionClick={onSuggestionClick} />
+      </div>
+    );
   }
 
   return (
-    <ScrollArea className="flex-1">
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
-      <MessageGroup>
-        {messages.map((message) => (
-          <Message
-            key={message.id}
-            align={message.role === "user" ? "end" : "start"}
-          >
-            <MessageAvatar>
-              <Avatar size="sm">
-                <AvatarFallback>
-                  {message.role === "user"
-                    ? displayName.slice(0, 1).toUpperCase()
-                    : "AI"}
-                </AvatarFallback>
-              </Avatar>
-            </MessageAvatar>
-            <MessageContent>
-              <Bubble
-                align={message.role === "user" ? "end" : "start"}
-                variant={message.role === "user" ? "default" : "muted"}
-              >
-                <BubbleContent>{getMessageText(message)}</BubbleContent>
-              </Bubble>
-            </MessageContent>
-          </Message>
-        ))}
-      </MessageGroup>
+    <MessageScrollerProvider autoScroll>
+      <MessageScroller className="min-h-0 flex-1 overflow-hidden !size-auto">
+        <MessageScrollerViewport>
+          <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-8 px-4 py-6 md:py-10">
+            {messages.map((message) => {
+              const isUser = message.role === "user";
+              const text = getMessageText(message);
+              const isLastAssistantStreaming =
+                isStreaming &&
+                !isUser &&
+                message.id === messages[messages.length - 1]?.id;
 
-      {isStreaming && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Spinner />
-        </div>
-      )}
-    </div>
-  </ScrollArea>
-  )
+              if (isUser) {
+                return (
+                  <MessageScrollerItem
+                    key={message.id}
+                    messageId={message.id}
+                    scrollAnchor
+                  >
+                    <div className="flex justify-end gap-3">
+                      <div className="flex max-w-[85%] flex-col items-end gap-1.5">
+                        <span className="px-1 text-xs font-medium text-muted-foreground">
+                          {displayName}
+                        </span>
+                        <Bubble align="end" variant="default">
+                          <BubbleContent className="rounded-2xl px-4 py-2.5">
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                              {text}
+                            </p>
+                          </BubbleContent>
+                        </Bubble>
+                      </div>
+                      <Avatar size="sm" className="mt-5 shrink-0">
+                        <AvatarFallback className="bg-primary text-xs text-primary-foreground">
+                          {displayName.slice(0, 1).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </MessageScrollerItem>
+                );
+              }
+
+              return (
+                <MessageScrollerItem
+                  key={message.id}
+                  messageId={message.id}
+                >
+                  <div className="flex gap-3">
+                    <Avatar size="sm" className="mt-0.5 shrink-0">
+                      <AvatarFallback className="bg-muted text-xs">
+                        <SparklesIcon className="size-3.5" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <span className="px-1 text-xs font-medium text-muted-foreground">
+                        ChaiGPT
+                      </span>
+                      <div
+                        className={cn(
+                          "min-w-0 rounded-2xl px-1",
+                          !text && "py-1"
+                        )}
+                      >
+                        {text ? (
+                          <MarkdownMessage
+                            content={text}
+                            isAnimating={isLastAssistantStreaming}
+                          />
+                        ) : (
+                          <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="size-1.5 animate-pulse rounded-full bg-primary" />
+                            <span className="size-1.5 animate-pulse rounded-full bg-primary [animation-delay:150ms]" />
+                            <span className="size-1.5 animate-pulse rounded-full bg-primary [animation-delay:300ms]" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </MessageScrollerItem>
+              );
+            })}
+          </MessageScrollerContent>
+        </MessageScrollerViewport>
+        <MessageScrollerButton />
+      </MessageScroller>
+    </MessageScrollerProvider>
+  );
 }
