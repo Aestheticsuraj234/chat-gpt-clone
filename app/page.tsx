@@ -1,10 +1,14 @@
+import { ChatDashboard } from "@/components/chat-dashboard";
 import { Button } from "@/components/ui/button";
+import { onBoardCurrentUser } from "@/lib/user/onboard";
+import {  UserButton } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import Image from "next/image";
 
-export default function Home() {
+export default async   function Home() {
+  await auth.protect();
+  const user = await onBoardCurrentUser();
   return (
-  <div>
-    <Button>Click me</Button>
-  </div>
+ <ChatDashboard/>
   );
 }
