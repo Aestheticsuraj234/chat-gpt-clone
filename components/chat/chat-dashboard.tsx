@@ -22,13 +22,17 @@ import { ModeToggle } from "../ui/mode-toggle";
 import { ConversationSidebar } from "./conversation-sidebar";
 import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
+import type { UIMessage } from "ai";
+import { ChatPanel } from "./chat-panel";
 
 export function ChatDashboard({
   conversationId,
-  userName
+  userName,
+  initialMessages
 }:{
   conversationId: string;
   userName?: string | null;
+  initialMessages: UIMessage[];
 }) {
   return (
     <SidebarProvider>
@@ -37,11 +41,24 @@ export function ChatDashboard({
       </Sidebar>
 
       <SidebarInset className="flex flex-col">
-       <MessageList conversationId={conversationId} userName={userName} />
-
-       <Separator />
-
-       <MessageInput conversationId={conversationId}/>
+      {conversationId ? (
+          <ChatPanel
+            conversationId={conversationId}
+            userName={userName}
+            initialMessages={initialMessages}
+          />
+        ) : (
+          <>
+            <div className="flex-1" />
+            <Separator />
+            <MessageInput
+              value=""
+              onChange={() => {}}
+              onSend={() => {}}
+              disabled
+            />
+          </>
+        )}
       </SidebarInset>
     </SidebarProvider>
   );
