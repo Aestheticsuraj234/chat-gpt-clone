@@ -1,4 +1,4 @@
-import { ChatDashboard } from "@/components/chat-dashboard";
+import { ChatDashboard } from "@/components/chat/chat-dashboard";
 import { Button } from "@/components/ui/button";
 import { onBoardCurrentUser } from "@/lib/user/onboard";
 import {  UserButton } from "@clerk/nextjs";
